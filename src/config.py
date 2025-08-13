@@ -100,7 +100,7 @@ class Config:
             
         # 特殊处理列表
         if key == "CATEGORIES":
-            value = self.get(key, "cs.AI,cs.LG,cs.CL")
+            value = self.get(key, "cs.RO,cs.MA,eess.SY")
             return [cat.strip() for cat in value.split(",") if cat.strip()]
         
         if key == "EMAIL_TO":
