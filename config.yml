@@ -10,8 +10,8 @@ CATEGORIES: "cs.AI,cs.LG,cs.CL"
 # 每个类别最多获取的论文数量
 MAX_PAPERS: 50
 
-# 搜索最近几天的论文
-SEARCH_DAYS: 2
+# 搜索最近几天的论文（设置为1表示只查询今天，周末通过cron自动停止）
+SEARCH_DAYS: 1
 
 # ==============================================================================
 # AI分析配置 (AI Analysis Configuration)
@@ -52,13 +52,6 @@ SMTP_PORT: 587
 
 # 注意: SMTP服务器、用户名、密码、发件人和收件人等敏感信息
 # 必须作为环境变量或在GitHub Secrets中设置，而不是在此文件中。
-
-# ... existing code ...
-  # (e.g., ['cs.CV', 'cs.LG', 'cs.CL'])
-  TARGET_CATEGORIES: ['cs.CV', 'cs.LG', 'cs.CL', 'cs.AI', 'cs.RO', 'cs.NE', 'cs.MA', 'stat.ML']
-  
-  # Days to look back for recent papers
-  DAYS_TO_CHECK: 2
 
 # New settings for the two-stage analysis process
 STAGE_ANALYSIS:

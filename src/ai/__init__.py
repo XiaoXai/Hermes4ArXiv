@@ -6,6 +6,6 @@ AI分析模块
 
 from .analyzer import DeepSeekAnalyzer
 from .prompts import PromptManager
-from .batch_coordinator import BatchAnalysisCoordinator
+from .batch_coordinator import BatchCoordinator
 
-__all__ = ['DeepSeekAnalyzer', 'PromptManager', 'BatchAnalysisCoordinator']
+__all__ = ['DeepSeekAnalyzer', 'PromptManager', 'BatchCoordinator']

@@ -10,8 +10,9 @@ from typing import List, Optional
 
 import arxiv
 import requests # 确保导入 requests 以捕获其异常
+import fitz  # PyMuPDF
 
-from src.utils.logger import logger
+from ..utils.logger import logger
 
 
 class ArxivClient:
@@ -50,7 +51,7 @@ class ArxivClient:
         """
         logger.info(f"ArxivClient: Initiating get_recent_papers. search_days = {self.search_days}")
         # 计算日期范围
-        today_utc = datetime.datetime.utcnow()  # 使用 UTC 时间
+        today_utc = datetime.datetime.now(datetime.UTC)  # 使用 timezone-aware UTC 时间
         start_date_utc = today_utc - datetime.timedelta(days=self.search_days)
 
         # 格式化ArXiv查询的日期
@@ -104,6 +105,8 @@ class ArxivClient:
 
         try:
             logger.info(f"正在下载: {paper.title}")
+            # 在 Result.download_pdf() 之前确保目录存在
+            output_dir.mkdir(parents=True, exist_ok=True)
             # 下载操作也应该使用配置好的客户端，但 download_pdf 是 Result 对象的方法，
             # 它内部应该会复用 Client 的 session (如果设计合理) 或创建新的。
             # arxiv.py 的 Result.download_pdf() 似乎会创建一个临时的 Client(page_size=1, delay_seconds=0.0, num_retries=0)
@@ -121,6 +124,45 @@ class ArxivClient:
         except Exception as e:
             logger.error(f"下载论文失败 (Unknown Error) {paper.title}: {e.__class__.__name__} - {e}")
             return None
+
+    def get_full_text(self, paper: arxiv.Result, output_dir: Path) -> Optional[str]:
+        """
+        下载PDF，提取全文，然后删除PDF。
+
+        Args:
+            paper: 论文对象
+            output_dir: 临时下载目录
+
+        Returns:
+            论文全文的字符串，如果失败则返回None。
+        """
+        pdf_path = None
+        try:
+            logger.info(f"开始为论文 '{paper.title}' 提取全文...")
+            pdf_path = self.download_paper(paper, output_dir)
+
+            if not pdf_path or not pdf_path.exists():
+                logger.error(f"下载失败或未找到PDF文件，无法提取文本: {pdf_path}")
+                return None
+
+            logger.info(f"从 {pdf_path} 提取文本...")
+            full_text = ""
+            with fitz.open(pdf_path) as doc:
+                for page in doc:
+                    full_text += page.get_text()
+            
+            # 对提取的文本进行一些基本清理
+            full_text = ' '.join(full_text.split())
+            logger.info(f"成功为论文 '{paper.title}' 提取了 {len(full_text)} 字符的文本。")
+            return full_text
+
+        except Exception as e:
+            logger.error(f"从PDF提取文本时出错: {e}", exc_info=True)
+            return None
+        finally:
+            # 确保无论如何都尝试删除下载的PDF文件
+            if pdf_path:
+                self.delete_pdf(pdf_path)
 
     def delete_pdf(self, pdf_path: Path) -> None:
         """

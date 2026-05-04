@@ -8,25 +8,40 @@
 
 2. **设置必需密钥**：进入 Settings → Secrets and variables → Actions，添加（一条条添加）：
    ```
-   DEEPSEEK_API_KEY=sk-your-api-key        # 必需：DeepSeek API密钥
+   # AI 模型配置（三选一，推荐Qwen）
+   QWEN_API_KEY=your-qwen-api-key            # 推荐：阿里云通义千问API密钥
+   QWEN_MODEL=qwen3-max                      # 可选：模型名称，默认为qwen3-max
+   # 或者
+   GLM_API_KEY=your-glm-api-key            # 推荐：智谱GLM API密钥
+   # 或者
+   DEEPSEEK_API_KEY=sk-your-api-key        # 备选：DeepSeek API密钥
+
+   # 邮件配置
    SMTP_USERNAME=your-email@gmail.com      # 必需：发送邮箱
    SMTP_PASSWORD=your-app-password         # 必需：邮箱授权码
    EMAIL_TO=recipient@gmail.com            # 必需：接收邮箱(支持多人，用","隔开)
+   
+   # 🎛️ 可选：总开关控制（控制每日自动运行）
+   ENABLE_DAILY_RUN=true                   # 可选：设置为false可暂停每日运行，默认为true
    ```
 
-3. **启用Actions**：GitHub Actions 将每日北京时间8:00自动运行
+3. **启用Actions**：GitHub Actions 将每周一到周五北京时间7:00自动运行（周末自动跳过）
 
 就是这么简单！系统将每日自动分析最新的AI/ML/NLP论文并发送邮件报告。
 
-📖 **需要自定义配置？** 参见：[高级配置指南](ADVANCED_CONFIG.md)  
-🔑 **获取API密钥？** 参见：[DeepSeek配置指南](docs/setup/DEEPSEEK_SETUP_GUIDE.md)  
+📖 **需要自定义配置？** 参见：[高级配置指南](ADVANCED_CONFIG.md)
+🔑 **获取API密钥？**
+- [Qwen配置指南](https://www.aliyun.com/product/dashscope) - 推荐，阿里云通义千问，成本低，性能好
+- [智谱GLM配置指南](https://open.bigmodel.cn/) - 推荐，200K上下文窗口，128K输出tokens
+- [DeepSeek配置指南](docs/setup/DEEPSEEK_SETUP_GUIDE.md) - 备选方案
+
 📧 **邮箱设置问题？** 参见：[Gmail设置指南](docs/setup/GMAIL_SETUP_GUIDE.md)
 
 ## 🔧 主要功能
 
 - **自动论文获取**：每日从 ArXiv 获取AI/ML/NLP领域最新论文
-- **AI 智能分析**：使用 DeepSeek 对论文进行深度分析和质量评估
-- **邮件自动推送**：发送包含分析结果的精美HTML邮件报告
+- **AI 智能分析**：支持阿里云通义千问、智谱GLM-4、DeepSeek等多种AI模型进行深度分析
+- **邮件自动推送**：发送包含分析结果的简洁美观HTML邮件报告
 - **GitHub Actions部署**：完全基于云端，无需本地环境
 
 ## 📊 AI 分析维度
@@ -46,17 +61,21 @@
 |-------|--------|------|
 | **分析领域** | `cs.AI,cs.LG,cs.CL` | AI、机器学习、自然语言处理 |
 | **论文数量** | `50篇` | 每次分析的论文数量 |
-| **搜索范围** | `最近2天` | 获取最新论文 |
+| **搜索范围** | `今天发布` | 只查询当天论文，避免重复 |
 | **分析详细度** | `全面分析` | 400-600字，平衡详细度和可读性 |
-| **运行时间** | `每日8:00` | 北京时间，可手动触发 |
+| **运行时间** | `周一至五 7:00` | 北京时间，周末自动跳过，可手动触发 |
+| **总开关** | `ENABLE_DAILY_RUN` | 通过GitHub Secret控制，默认启用 |
 
 **需要调整这些配置？** 参见 [高级配置指南](ADVANCED_CONFIG.md)
 
 ## 🕒 使用方式
 
-- **自动运行**：每日北京时间 8:00（GitHub Actions自动触发）
+- **自动运行**：每周一至五北京时间 7:00（GitHub Actions自动触发，周末休息）
 - **手动运行**：Actions → Daily Paper Analysis → Run workflow  
+- **暂停运行**：Settings → Secrets → 设置 `ENABLE_DAILY_RUN=false`
 - **查看结果**：检查邮箱或仓库的运行日志
+
+📖 **详细开关使用指南**：参见 [SWITCH_GUIDE.md](SWITCH_GUIDE.md)
 
 ## 🔐 安全说明
 
@@ -72,8 +91,11 @@
 - 验证接收邮箱地址正确
 
 **Actions运行失败？**
-- 检查API密钥是否正确设置
-- 确认DeepSeek账户有足够余额
+- 检查AI API密钥是否正确设置（QWEN_API_KEY、GLM_API_KEY 或 DEEPSEEK_API_KEY）
+- 确认AI服务账户有足够余额
+- Qwen: https://www.aliyun.com/product/dashscope
+- 智谱GLM: https://open.bigmodel.cn/
+- DeepSeek: https://platform.deepseek.com/
 - 查看Actions运行日志了解具体错误
 
 **想要更多自定义？**
@@ -83,7 +105,10 @@
 
 ## 📚 详细文档
 
+- [开关控制指南](SWITCH_GUIDE.md) - 如何暂停/启用每日运行，成本控制
+- [评分优化分析](SCORING_ANALYSIS.md) - 评分虚高问题分析与解决方案
 - [高级配置指南](ADVANCED_CONFIG.md) - 自定义分析类型、论文数量等
+- [Qwen API配置](docs/setup/QWEN_SETUP_GUIDE.md) - 通义千问API密钥申请和配置
 - [DeepSeek API配置](docs/setup/DEEPSEEK_SETUP_GUIDE.md) - API密钥申请和配置
 - [Gmail邮箱设置](docs/setup/GMAIL_SETUP_GUIDE.md) - 邮箱授权码设置
 

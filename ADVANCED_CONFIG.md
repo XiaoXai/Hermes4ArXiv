@@ -57,18 +57,20 @@ MAX_WORKERS=2
 
 在GitHub Secrets中添加或修改以下配置：
 
-```bash
-# 快速分析
-ANALYSIS_TYPE=quick
-
-# 全面分析（默认）
-ANALYSIS_TYPE=comprehensive
-
-# 详细分析
-ANALYSIS_TYPE=detailed
-```
-
 ## 🔧 详细配置选项
+
+### Qwen API 配置（推荐）
+
+```bash
+# 基础配置
+QWEN_API_KEY=your-qwen-api-key      # 必需，阿里云通义千问API密钥
+QWEN_MODEL=qwen3-max                # 可选，默认值，可选：qwen3-max, qwen-plus, qwen-turbo
+
+# API 调用优化
+API_RETRY_TIMES=3                   # 重试次数
+API_DELAY=2                         # 请求间隔(秒)
+API_TIMEOUT=60                      # 超时时间(秒)
+```
 
 ### DeepSeek API 配置
 
@@ -135,6 +137,14 @@ SMTP_PASSWORD=authorization-code     # 授权码
 
 ## 📊 成本和性能参考
 
+### Qwen API 成本（推荐）
+
+| 论文数量 | 预估成本(元) | 适用场景 |
+|----------|-------------|----------|
+| 10篇     | ¥0.02-0.05 | 日常跟踪 |
+| 50篇     | ¥0.10-0.25 | 周报总结 |
+| 100篇    | ¥0.20-0.50 | 深度调研 |
+
 ### DeepSeek API 成本
 
 | 论文数量 | 预估成本(元) | 适用场景 |
@@ -156,6 +166,26 @@ SMTP_PASSWORD=authorization-code     # 授权码
 - **错误诊断**: 失败时查看具体错误信息
 
 ## 🛠️ 详细故障排除
+
+### Qwen API 问题
+
+**API 密钥无效**
+- 检查GitHub Secrets中密钥是否正确
+- 登录 [阿里云DashScope控制台](https://dashscope.aliyun.com/) 验证密钥有效性
+
+**余额不足**
+- 登录 [阿里云DashScope控制台](https://dashscope.aliyun.com/)
+- 查看账户余额和使用统计
+- 充值或申请免费额度
+
+**请求频率限制**
+```bash
+# 在GitHub Secrets中增加请求间隔
+API_DELAY=5
+
+# 减少并行数
+MAX_WORKERS=2
+```
 
 ### DeepSeek API 问题
 
@@ -235,6 +265,7 @@ schedule:
 
 ## 🔗 相关文档
 
+- [Qwen API 文档](docs/setup/QWEN_SETUP_GUIDE.md) - 阿里云通义千问API配置
 - [DeepSeek API 文档](https://platform.deepseek.com/docs)
 - [GitHub Actions 文档](https://docs.github.com/actions)
 - [Gmail 应用密码设置](docs/setup/GMAIL_SETUP_GUIDE.md) 

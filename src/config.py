@@ -62,14 +62,16 @@ class Config:
         """从环境变量加载配置，覆盖YAML中的值"""
         # 遍历 self._config 的键，以便我们知道要从环境中查找哪些变量
         config_keys = list(self._config.keys())
-        
+
         # 也包括那些可能不在YAML中但可以通过env设置的敏感键
         sensitive_keys = [
+            "QWEN_API_KEY", "QWEN_MODEL",
             "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL",
+            "GLM_API_KEY", "GLM_MODEL",
             "SMTP_SERVER", "SMTP_USERNAME", "SMTP_PASSWORD",
             "EMAIL_FROM", "EMAIL_TO", "GITHUB_REPO_URL"
         ]
-        
+
         for key in config_keys + sensitive_keys:
             env_value = os.getenv(key)
             if env_value is not None:
@@ -84,7 +86,7 @@ class Config:
         self.PAPERS_DIR = self.BASE_DIR / "storage" / "papers"
         self.CONCLUSION_FILE = self.BASE_DIR / "storage" / "conclusion.md"
         self.HTML_REPORT_FILE = self.BASE_DIR / "storage" / "report.html"
-        self.TEMPLATES_DIR = self.BASE_DIR / "output" / "templates"
+        self.TEMPLATES_DIR = self.BASE_DIR / "src" / "output" / "templates"
         self.DB_PATH = self.BASE_DIR / "storage" / "papers.db"
         self.LOGS_DIR = self.BASE_DIR / "storage" / "logs"
 
@@ -131,10 +133,11 @@ class Config:
 
     def validate(self) -> bool:
         """验证配置是否完整"""
-        if not self.DEEPSEEK_API_KEY:
-            print("❌ 未配置DEEPSEEK_API_KEY，无法进行论文分析")
+        # 检查AI API密钥（至少需要一个）
+        if not self.GLM_API_KEY and not self.DEEPSEEK_API_KEY and not self.QWEN_API_KEY:
+            print("❌ 未配置AI API密钥，请配置 QWEN_API_KEY、GLM_API_KEY 或 DEEPSEEK_API_KEY")
             return False
-        
+
         required_email_configs = [
             self.SMTP_SERVER, self.SMTP_USERNAME, self.SMTP_PASSWORD, self.EMAIL_FROM
         ]
@@ -146,7 +149,13 @@ class Config:
             print("❌ 缺少收件人邮箱配置 (EMAIL_TO)")
             return False
 
-        print(f"✅ 配置验证通过！使用DeepSeek模型: {self.DEEPSEEK_MODEL}")
+        # 显示使用的模型
+        if self.QWEN_API_KEY:
+            print(f"✅ 配置验证通过！使用Qwen模型: {self.QWEN_MODEL or 'qwen3-max'}")
+        elif self.GLM_API_KEY:
+            print(f"✅ 配置验证通过！使用智谱GLM模型: {self.GLM_MODEL or 'glm-4.6'}")
+        else:
+            print(f"✅ 配置验证通过！使用DeepSeek模型: {self.DEEPSEEK_MODEL}")
         return True
 
     def create_directories(self):

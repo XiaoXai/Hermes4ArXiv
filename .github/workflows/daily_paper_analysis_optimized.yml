@@ -2,7 +2,7 @@ name: 📰 Daily Paper Analysis
 
 on:
   schedule:
-    - cron: '0 23 * * *'  # 每天 UTC 时间 23:00 运行（北京时间 07:00）
+    - cron: '0 23 * * 1-5'  # 每周一到周五 UTC 23:00 运行（北京时间周二到周六早上07:00，避开周末）
   workflow_dispatch:  # 允许手动触发
 
 jobs:
@@ -11,13 +11,34 @@ jobs:
     timeout-minutes: 90  # 增加超时时间以应对网络延迟
     
     steps:
+    # 🔒 检查是否启用每日运行（通过 GitHub Secret 控制）
+    - name: Check if daily run is enabled
+      id: check-enabled
+      run: |
+        ENABLE_RUN="${{ secrets.ENABLE_DAILY_RUN }}"
+        # 如果未设置或为空，默认为 true
+        if [ -z "$ENABLE_RUN" ]; then
+          ENABLE_RUN="true"
+        fi
+        echo "enabled=$ENABLE_RUN" >> $GITHUB_OUTPUT
+        echo "🔍 ENABLE_DAILY_RUN = $ENABLE_RUN"
+        
+        if [ "$ENABLE_RUN" != "true" ]; then
+          echo "⏸️  每日运行已被禁用，跳过本次执行"
+          echo "💡 如需重新启用，请在 GitHub Secrets 中将 ENABLE_DAILY_RUN 设置为 true"
+        else
+          echo "✅ 每日运行已启用，继续执行"
+        fi
+    
     - name: Checkout repository
+      if: steps.check-enabled.outputs.enabled == 'true'
       uses: actions/checkout@v4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     
     # 分步骤处理缓存，增加容错性
     - name: Setup uv with retry
+      if: steps.check-enabled.outputs.enabled == 'true'
       id: setup-uv
       continue-on-error: true
       uses: astral-sh/setup-uv@v4
@@ -28,17 +49,19 @@ jobs:
     
     # 如果缓存失败，使用无缓存模式
     - name: Setup uv without cache (fallback)
-      if: steps.setup-uv.outcome == 'failure'
+      if: steps.check-enabled.outputs.enabled == 'true' && steps.setup-uv.outcome == 'failure'
       uses: astral-sh/setup-uv@v4
       with:
         version: "latest"
         enable-cache: false
     
     - name: Set up Python
+      if: steps.check-enabled.outputs.enabled == 'true'
       run: uv python install 3.12
     
     # 尝试恢复papers缓存，失败不影响主流程
     - name: Restore papers cache
+      if: steps.check-enabled.outputs.enabled == 'true'
       id: cache-papers
       continue-on-error: true
       uses: actions/cache/restore@v4
@@ -49,6 +72,7 @@ jobs:
           ${{ runner.os }}-papers-
     
     - name: Install dependencies with retry
+      if: steps.check-enabled.outputs.enabled == 'true'
       run: |
         echo "开始安装依赖..."
         for i in {1..3}; do
@@ -69,6 +93,7 @@ jobs:
         done
     
     - name: Create necessary directories
+      if: steps.check-enabled.outputs.enabled == 'true'
       run: |
         mkdir -p src/papers
         mkdir -p src/templates
@@ -76,12 +101,17 @@ jobs:
         echo "📁 创建必要目录完成"
     
     - name: Run paper analysis with timeout
+      if: steps.check-enabled.outputs.enabled == 'true'
       timeout-minutes: 45  # 为主要任务设置独立超时
       env:
-        # DeepSeek AI 配置
+        # 🤖 AI 配置 - 优先使用Qwen，其次智谱GLM，最后DeepSeek
+        QWEN_API_KEY: ${{ secrets.QWEN_API_KEY }}
+        QWEN_MODEL: ${{ secrets.QWEN_MODEL || 'qwen3-max' }}
+        GLM_API_KEY: ${{ secrets.GLM_API_KEY }}
+        GLM_MODEL: ${{ secrets.GLM_MODEL || 'glm-4.6' }}
         DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL || 'deepseek-chat' }}
-        
+
         # 📧 邮件配置 - 敏感信息保留在Secrets中
         SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
         SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
@@ -108,7 +138,7 @@ jobs:
     
     # 尝试保存papers缓存，失败不影响主流程
     - name: Save papers cache
-      if: always()
+      if: always() && steps.check-enabled.outputs.enabled == 'true'
       continue-on-error: true
       uses: actions/cache/save@v4
       with:
@@ -116,7 +146,7 @@ jobs:
         key: ${{ runner.os }}-papers-${{ hashFiles('**/uv.lock') }}
     
     - name: Upload logs as artifacts
-      if: always()  # 即使失败也上传日志
+      if: always() && steps.check-enabled.outputs.enabled == 'true'  # 即使失败也上传日志
       continue-on-error: true  # 上传失败不影响主流程
       uses: actions/upload-artifact@v4
       with:
@@ -126,7 +156,7 @@ jobs:
         if-no-files-found: warn
     
     - name: Commit and push changes
-      if: success()  # 只有成功时才提交
+      if: success() && steps.check-enabled.outputs.enabled == 'true'  # 只有成功且启用时才提交
       run: |
         echo "📝 准备提交更改..."
         git config --global user.name 'github-actions[bot]'
@@ -160,7 +190,7 @@ jobs:
         fi
     
     - name: Performance summary
-      if: always()
+      if: always() && steps.check-enabled.outputs.enabled == 'true'
       run: |
         echo "📊 性能总结："
         echo "- 工作流运行时间: ${{ github.event.head_commit.timestamp }}"
@@ -174,7 +204,7 @@ jobs:
         free -h
     
     - name: Notify on failure
-      if: failure()
+      if: failure() && steps.check-enabled.outputs.enabled == 'true'
       run: |
         echo "❌ 工作流执行失败"
         echo "🕐 失败时间: $(date)"

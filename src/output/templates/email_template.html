@@ -10,492 +10,281 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             line-height: 1.6;
-            color: #2c3e50;
-            background-color: #f8f9fa;
+            color: #333;
+            background-color: #f5f5f5;
             padding: 20px;
         }
-        
-        .email-container {
-            max-width: 800px;
+
+        .container {
+            max-width: 700px;
             margin: 0 auto;
-            background: #ffffff;
+            background: white;
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
             overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
-        
-        /* 头部样式 */
+
         .header {
-            background: #ffffff;
-            padding: 32px 32px 24px;
-            border-bottom: 2px solid #e9ecef;
+            background: #2c3e50;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
         }
-        
+
         .header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 6px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .header-icon {
             font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
         }
-        
-        .header .subtitle {
-            font-size: 16px;
-            color: #6c757d;
-            margin-bottom: 16px;
-        }
-        
+
         .header .date {
             font-size: 14px;
-            color: #495057;
-            background: #f8f9fa;
-            padding: 8px 12px;
-            border-radius: 4px;
-            display: inline-block;
-            border-left: 3px solid #007bff;
+            opacity: 0.9;
         }
-        
-        /* 概览卡片 */
-        .summary-card {
-            margin: 24px 32px;
-            background: #f8f9fa;
-            border-radius: 6px;
+
+        .summary {
             padding: 20px;
-            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
         }
-        
-        .summary-title {
+
+        .papers {
+            padding: 20px;
+        }
+
+        .paper {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .paper:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .paper-title {
             font-size: 18px;
             font-weight: 600;
             color: #2c3e50;
-            margin-bottom: 8px;
-        }
-        
-        .summary-content {
-            color: #6c757d;
-            font-size: 15px;
-            margin-bottom: 16px;
-        }
-        
-        .summary-stats {
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        
-        .stat-item {
-            background: white;
-            padding: 12px 16px;
-            border-radius: 4px;
-            text-align: center;
-            min-width: 80px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        }
-        
-        .stat-number {
-            font-size: 20px;
-            font-weight: 600;
-            color: #007bff;
-            display: block;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #6c757d;
-            margin-top: 2px;
-        }
-        
-        /* 论文卡片 */
-        .papers-container {
-            padding: 0 32px 32px;
-        }
-        
-        .paper-card {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 6px;
-            margin-bottom: 20px;
-            overflow: hidden;
-            transition: box-shadow 0.2s ease;
-        }
-        
-        .paper-card:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .paper-header {
-            padding: 24px 24px 20px;
-            border-bottom: 1px solid #f1f3f4;
-        }
-        
-        .paper-title {
-            font-size: 20px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             line-height: 1.4;
         }
-        
+
         .paper-meta {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 12px;
-            font-size: 14px;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 16px;
+            line-height: 1.8;
         }
-        
-        .meta-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
-        }
-        
-        .meta-icon {
-            font-size: 14px;
-            margin-top: 2px;
-            flex-shrink: 0;
-            color: #007bff;
-        }
-        
-        .meta-content {
-            flex: 1;
-        }
-        
-        .meta-label {
+
+        .paper-meta .label {
             font-weight: 600;
-            color: #495057;
-            display: block;
-            margin-bottom: 2px;
+            color: #555;
         }
-        
-        .meta-value {
-            color: #6c757d;
-            line-height: 1.4;
-        }
-        
-        .categories-container {
-            display: flex;
+
+        .categories {
+            display: inline-flex;
+            gap: 6px;
             flex-wrap: wrap;
-            gap: 4px;
-            margin-top: 4px;
         }
-        
-        .category-tag {
+
+        .category {
             background: #e3f2fd;
             color: #1976d2;
-            padding: 3px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 500;
-            border: 1px solid #bbdefb;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
         }
-        
-        /* 分析内容 */
-        .paper-content {
-            padding: 24px;
-        }
-        
-        .analysis-section {
-            margin-bottom: 20px;
-            padding: 16px;
+
+        .analysis {
             background: #f8f9fa;
-            border-radius: 4px;
-            border-left: 3px solid #28a745;
+            padding: 16px;
+            border-radius: 6px;
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #444;
         }
-        
+
+        .analysis h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .analysis-section {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            border-left: 3px solid #007bff;
+        }
+
+        .analysis-section:last-child {
+            margin-bottom: 0;
+        }
+
         .analysis-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             color: #2c3e50;
             margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
-        
+
+        .icon-badge {
+            font-size: 16px;
+        }
+
         .analysis-content {
-            color: #495057;
-            line-height: 1.6;
             font-size: 14px;
+            line-height: 1.7;
+            color: #444;
         }
-        
+
+        .analysis-content p {
+            margin: 0 0 8px 0;
+        }
+
+        .analysis-content p:last-child {
+            margin-bottom: 0;
+        }
+
         .analysis-content strong {
             color: #2c3e50;
-        }
-        
-        .analysis-content ul, .analysis-content ol {
-            margin-left: 16px;
-            margin-top: 6px;
-        }
-        
-        .analysis-content li {
-            margin-bottom: 4px;
-        }
-        
-        .paper-actions {
-            display: flex;
-            gap: 12px;
-            margin-top: 20px;
-            padding-top: 16px;
-            border-top: 1px solid #e9ecef;
-        }
-        
-        .paper-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 14px;
             font-weight: 600;
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25);
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
         }
-        
-        .paper-link::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
+
+        .analysis-content code {
+            background: #f1f3f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
         }
-        
-        .paper-link:hover {
-            background: linear-gradient(135deg, #0056b3 0%, #004494 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0, 123, 255, 0.35);
-            text-decoration: none;
-            color: white;
-        }
-        
-        .paper-link:hover::before {
-            left: 100%;
-        }
-        
-        .paper-link:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25);
-        }
-        
-        .secondary-link {
-            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
-            box-shadow: 0 2px 8px rgba(108, 117, 125, 0.25);
-        }
-        
-        .secondary-link:hover {
-            background: linear-gradient(135deg, #545b62 0%, #383d41 100%);
-            box-shadow: 0 4px 16px rgba(108, 117, 125, 0.35);
-        }
-        
-        /* 页脚 */
-        .footer {
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            padding: 24px 32px;
-            text-align: center;
-        }
-        
-        .footer-text {
-            font-size: 14px;
-            color: #6c757d;
-            margin-bottom: 12px;
-        }
-        
-        .footer-links {
+
+        .paper-links {
             display: flex;
-            justify-content: center;
-            gap: 16px;
-            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
         }
-        
-        .footer-link {
-            color: #007bff;
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 4px;
             text-decoration: none;
             font-size: 13px;
-            transition: color 0.2s ease;
+            font-weight: 500;
+            transition: all 0.2s;
         }
-        
-        .footer-link:hover {
-            color: #0056b3;
-            text-decoration: underline;
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
         }
-        
-        /* 响应式设计 */
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 10px;
             }
-            
-            .header,
-            .summary-card,
-            .papers-container,
-            .footer {
-                margin: 16px;
-                padding: 20px;
+
+            .header {
+                padding: 20px 15px;
             }
-            
-            .paper-header,
-            .paper-content {
-                padding: 20px;
+
+            .papers {
+                padding: 15px;
             }
-            
-            .paper-meta {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
-            
-            .summary-stats {
-                justify-content: center;
-            }
-            
-            .paper-actions {
+
+            .paper-links {
                 flex-direction: column;
             }
-            
-            .footer-links {
-                flex-direction: column;
-                gap: 8px;
-            }
-        }
-        
-        /* 打印样式 */
-        @media print {
-            body {
-                background: white;
-                padding: 0;
-            }
-            
-            .email-container {
-                box-shadow: none;
-                border-radius: 0;
-            }
-            
-            .paper-card {
-                break-inside: avoid;
+
+            .btn {
+                text-align: center;
             }
         }
     </style>
 </head>
 <body>
-    <div class="email-container">
-        <!-- 头部 -->
+    <div class="container">
         <div class="header">
-            <h1>
-                <span class="header-icon">📚</span>
-                ArXiv 每日论文推荐
-            </h1>
-            <div class="subtitle">精选学术前沿，助力科研进展</div>
+            <h1>📚 ArXiv 每日论文推荐</h1>
             <div class="date">{{ date }}</div>
         </div>
-        
-        <!-- 概览卡片 -->
-        <div class="summary-card">
-            <h3 class="summary-title">本期概览</h3>
-            <div class="summary-content">
-                本期为您精选了 {{ paper_count }} 篇最新学术论文，涵盖多个前沿研究领域。
-            </div>
-            <div class="summary-stats">
-                <div class="stat-item">
-                    <span class="stat-number">{{ paper_count }}</span>
-                    <span class="stat-label">论文数量</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">{{ categories.split(', ')|length }}</span>
-                    <span class="stat-label">研究领域</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-number">5</span>
-                    <span class="stat-label">分析维度</span>
-                </div>
-            </div>
+
+        <div class="summary">
+            本期为您精选了 <strong>{{ paper_count }}</strong> 篇最新学术论文
         </div>
-        
-        <!-- 论文列表 -->
-        <div class="papers-container">
+
+        <div class="papers">
             {% for paper_data in papers %}
-            <div class="paper-card">
-                <div class="paper-header">
-                    <h2 class="paper-title">{{ paper_data.title }}</h2>
-                    <div class="paper-meta">
-                        <div class="meta-item">
-                            <span class="meta-icon">👥</span>
-                            <div class="meta-content">
-                                <span class="meta-label">作者</span>
-                                <span class="meta-value">{{ paper_data.authors }}</span>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-icon">📅</span>
-                            <div class="meta-content">
-                                <span class="meta-label">发表时间</span>
-                                <span class="meta-value">{{ paper_data.published }}</span>
-                            </div>
-                        </div>
-                        <div class="meta-item">
-                            <span class="meta-icon">🔬</span>
-                            <div class="meta-content">
-                                <span class="meta-label">研究领域</span>
-                                <div class="categories-container">
-                                    {% for category in paper_data.categories %}
-                                    <span class="category-tag">{{ category }}</span>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
+            <div class="paper">
+                <div class="paper-title">{{ paper_data.title }}</div>
+
+                <div class="paper-meta">
+                    <div><span class="label">作者：</span>{{ paper_data.authors }}</div>
+                    <div><span class="label">发表：</span>{{ paper_data.published }}</div>
+                    <div>
+                        <span class="label">领域：</span>
+                        <span class="categories">
+                            {% for category in paper_data.categories %}
+                            <span class="category">{{ category }}</span>
+                            {% endfor %}
+                        </span>
                     </div>
                 </div>
-                
-                <div class="paper-content">
-                    <div class="analysis-section">
-                        <h4 class="analysis-title">🎯 AI 深度分析</h4>
-                        <div class="analysis-content">
-                            {{ paper_data.analysis | safe }}
-                        </div>
-                    </div>
-                    
-                    <!-- 操作按钮 -->
-                    <div class="paper-actions">
-                        <a href="{{ paper_data.url }}" class="paper-link" target="_blank">
-                            <span>📖</span>
-                            查看详情
-                        </a>
-                        <a href="{{ paper_data.pdf_url or paper_data.url }}" class="paper-link secondary-link" target="_blank">
-                            <span>📄</span>
-                            下载 PDF
-                        </a>
-                    </div>
+
+                <div class="analysis">
+                    <h4>🎯 AI 分析</h4>
+                    <div>{{ paper_data.analysis | safe }}</div>
+                </div>
+
+                <div class="paper-links">
+                    <a href="{{ paper_data.url }}" class="btn btn-primary" target="_blank">查看论文</a>
+                    <a href="{{ paper_data.pdf_url or paper_data.url }}" class="btn btn-secondary" target="_blank">下载 PDF</a>
                 </div>
             </div>
             {% endfor %}
         </div>
-        
-        <!-- 页脚 -->
+
         <div class="footer">
-            <div class="footer-text">
-                由 ArXiv 论文追踪器自动生成 • {{ date }}
-            </div>
-            <div class="footer-links">
-                <a href="#" class="footer-link">配置设置</a>
-                <a href="#" class="footer-link">历史记录</a>
-                <a href="#" class="footer-link">反馈建议</a>
-                <a href="#" class="footer-link">使用指南</a>
-            </div>
+            由 ArXiv 论文追踪器自动生成 · {{ date }}
         </div>
     </div>
 </body>

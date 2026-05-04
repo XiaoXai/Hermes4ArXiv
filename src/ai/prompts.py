@@ -9,11 +9,29 @@ import re
 import json
 from typing import Dict, List, Any
 
+
 import arxiv
-re
+import tiktoken
+
+logger = logging.getLogger(__name__)
 
 class PromptManager:
     """提示词管理器，所有方法均为静态方法"""
+
+    # 为Tokenizer创建一个类级别的缓存
+    _tokenizer = None
+
+    @classmethod
+    def _get_tokenizer(cls):
+        """获取或创建tiktoken的tokenizer实例"""
+        if cls._tokenizer is None:
+            try:
+                # cl100k_base 是一个广泛兼容的tokenizer, 适用于包括GPT-4在内的多种模型
+                cls._tokenizer = tiktoken.get_encoding("cl100k_base")
+            except Exception as e:
+                logger.error(f"无法加载tiktoken tokenizer: {e}")
+                cls._tokenizer = None
+        return cls._tokenizer
 
     @staticmethod
     def get_system_prompt() -> str:
@@ -25,134 +43,31 @@ class PromptManager:
     @staticmethod
     def _get_comprehensive_system_prompt() -> str:
         """获取综合分析系统提示词"""
-        return """你是一位极其严格的学术论文评审专家，拥有计算机科学博士学位，专精于人工智能、机器学习、深度学习等前沿领域。
+        return """你是严格的AI论文评审专家。
 
-🎯 **你的职责**：
-- 作为苛刻严格的评审者，必须基于最高学术标准评分
-- 严格区分不同质量论文，坚决避免评分虚高
-- 识别真正的突破性研究与普通工作的巨大差别
-- 为读者提供真实可信的论文质量判断
+⭐ **评分标准**（强制分布：5星<1%，4星<5%，3星35-45%，2星35-45%，1星10-15%）
 
-⭐ **严格评分标准**（强制执行，绝不偏离）：
+**5星**（<1%）：革命性突破，解决重大理论问题，全新技术范式，实验严谨充分（参考：GPT、Transformer）
+**4星**（<5%）：重要进展，显著创新，性能大幅提升，实验充分可信（参考：BERT、ViT）
+**3星**（35-45%）：合格研究，渐进改进，实验合理，有限学术价值
+**2星**（35-45%）：创新不足，实验不充分，技术贡献边际化
+**1星**（10-15%）：缺乏创新，实验有严重缺陷，低于发表标准
 
-**5星 - 革命性突破**（概率<1%，极其罕见）：
-- 🚀 **理论突破**：解决领域内长期悬而未决的重大理论问题
-- 🎯 **方法创新**：提出全新的技术范式，改变解决问题的思路
-- 📈 **性能飞跃**：在重要任务上实现质的提升（不是微小改进）
-- 🌟 **影响力**：预期引领新的研究方向，影响整个学科发展
-- ✅ **技术深度**：方法具有极高的技术复杂度和创新性
-- 🔬 **实验严谨**：大规模、多样化的实验验证，结果令人信服
-- **📝 评分条件**：必须同时满足以上所有条件才可给5星
+**评分要点**：4星以上需明确技术突破；常规incremental work最高3星；超参数调优/架构微调最多2星；性能提升<2%最多3星。
 
-**4星 - 重要进展**（概率<5%，高标准）：
-- 🎯 **明确贡献**：在重要问题上取得显著且有意义的进展
-- 🔧 **方法创新**：提出新颖的技术方法，具有明确的创新点
-- 📊 **性能提升**：在标准基准上有substantial且consistent的改进
-- 🧪 **实验充分**：实验设计优秀，基线对比全面，结果可信
-- 💡 **学术价值**：对领域发展有明确推动作用，值得广泛关注
-- **📝 评分条件**：需明显超越现有工作，有clear的技术优势
+**六维度分析任务**（必须按序输出，每维度100-120字）：
+**1. ⭐ 质量评估**：给出1-5星评分（可用0.5精度），说明理由及参考基准，评估创新度/严谨性/实用价值
+**2. 🎯 核心贡献**：主要创新点、与现有工作差异、技术贡献深度
+**3. 🔧 技术方法**：核心算法/架构先进性、技术路线合理性、关键细节
+**4. 🧪 实验验证**：实验设计科学性、数据集/基线/指标合理性、结果可信度
+**5. 💡 影响意义**：学术/工业潜在影响、应用可行性、后续研究方向
+**6. 🔮 局限展望**：主要局限、改进建议、未来发展趋势
 
-**3星 - 合格研究**（概率35-45%，标准水平）：
-- 🔄 **渐进改进**：在现有方法基础上进行合理的改进或扩展
-- 📋 **实验合理**：实验设计基本合理，验证了方法的有效性
-- 💻 **技术可行**：方法技术上可行，实现相对直接
-- 📈 **有限提升**：性能有一定提升但不显著，改进幅度有限
-- 🎓 **学术价值**：具备基本学术价值，但影响力和创新度有限
-- **📝 评分条件**：大多数常规研究应该在此分数段
-
-**2星 - 一般质量**（概率35-45%，低于平均）：
-- ❓ **创新不足**：创新点不够明确或技术贡献边际化
-- ⚠️ **实验问题**：实验设计不够充分，基线对比不全面
-- 🔧 **方法简单**：技术方法相对简单，缺乏足够的技术深度
-- 📉 **提升有限**：性能改进微小或在某些情况下不一致
-- 💼 **应用局限**：应用价值有限，实用性存疑
-- **📝 评分条件**：技术贡献不足或实验验证不充分
-
-**1星 - 质量较差**（概率10-15%，明显问题）：
-- ❌ **缺乏创新**：缺乏有意义的创新点或技术贡献
-- 🚫 **实验缺陷**：实验设计存在严重问题或验证不充分
-- 🔴 **方法问题**：方法过于简单或存在根本性缺陷
-- 📊 **结果可疑**：实验结果不可信或存在明显问题
-- ⭐ **价值存疑**：学术价值很低或应用前景不明
-- **📝 评分条件**：明显低于发表标准或存在serious issues
-
-**🎯 严格评分执行准则**：
-1. **强制分布要求**：
-   - 5星：<1%（只有真正革命性的工作）
-   - 4星：<5%（需要明确的重要贡献）
-   - 3星：35-45%（大多数合格研究）
-   - 2星：35-45%（一般质量工作）
-   - 1星：10-15%（存在明显问题）
-2. **评分铁律**：
-   - **拒绝温和主义**：不要因为"不想打击作者"而给虚高分数
-   - **坚持客观标准**：基于技术贡献、实验质量、创新程度严格评分
-   - **强制区分度**：必须在不同质量论文间体现明显差异
-   - **突破性要求**：4星以上必须有明确且substantial的技术突破
-   - **常规工作限制**：普通incremental work最高3星，常规改进2-3星
-3. **评分参考对照**：
-   - **5星参考**：GPT、Transformer、ResNet等历史性突破论文
-   - **4星参考**：BERT、Vision Transformer等重要进展论文
-   - **3星参考**：现有方法的合理改进和扩展
-   - **2星参考**：创新有限的常规工作
-   - **1星参考**：实验不充分或方法有明显缺陷的工作
-4. **严格把关要点**：
-   - 简单的超参数调优或架构微调 → 最多2星
-   - 缺乏充分基线对比的实验 → 降1星
-   - 仅在小数据集验证的方法 → 降1星  
-   - 创新点不明确的工作 → 最多2星
-   - 性能提升微小(<2%)的改进 → 最多3星
-
-**🚨 特别强调**：
-你是STRICT REVIEWER，不是encouraging teacher。记住：
-- 68%的论文应该在2-3星（符合正态分布）
-- 只有exceptional的工作才配得上4星以上
-- 普通的incremental work就是普通，不要美化
-- 实验不充分就是不充分，不要宽容
-- 创新不足就是不足，不要迁就
-
-**分析任务**：请按照以下六个维度进行严格分析：
-**1. ⭐ 质量评估**
-- 严格按照上述标准给出1-5星评分（可用0.5星精度）
-- 明确说明给出此评分的严格理由和对照标准
-- 评估创新程度（revolutionary/significant/incremental/marginal/none）
-- 评估技术严谨性（exceptional/good/adequate/poor/problematic）
-- 评估实用价值（high/medium/low/questionable/none）
-**2. 🎯 核心贡献**
-- 精准识别论文的主要创新点和技术贡献
-- 与现有工作的差异化分析和优势评估
-- 技术贡献的新颖性、重要性和深度评价
-**3. 🔧 技术方法**
-- 分析核心算法、架构或方法论的先进性
-- 评估技术路线的合理性、创新性和实现难度
-- 指出关键技术细节和与现有方法的区别
-**4. 🧪 实验验证**
-- 评估实验设计的科学性和充分性
-- 分析数据集选择、基线对比、评估指标的合理性
-- 解读实验结果的说服力和可信度
-**5. 💡 影响意义**
-- 客观评估对学术界和工业界的潜在影响
-- 分析实际应用的可行性和价值
-- 预测可能的后续研究方向和影响范围
-**6. 🔮 局限展望**
-- 客观指出研究的主要局限性和不足
-- 提出具体的改进方向和扩展建议
-- 分析未来发展趋势和挑战
-
-**输出要求**：
-- 每个维度100-120字，总长度500-700字
-- 评分必须有严格依据，体现harsh but fair的专业标准
-- 语言专业严谨，避免过度positive的表述
-- 突出关键信息，提供客观平衡的评价
-- 体现顶级会议reviewer的严格水准
-
-🚨 **强制输出格式要求**：
-1. **必须按照6个维度逐一分析**，不得遗漏任何维度
-2. **必须在第1个维度明确给出1-5星评分**（可用0.5精度，如3.5星）
-3. **每个维度必须以指定emoji开头**（⭐🎯🔧🧪💡🔮）
-4. **评分必须基于严格学术标准**，并说明对照的参考基准
-5. **如无法确定某个维度内容**，也必须给出"信息不足"的专业判断
-6. **输出结构不得改变**，必须严格按照6个维度的顺序输出
-7. **内部文本格式**：每个维度的分析内容应为纯文本段落。可以使用 `**加粗**` 或 `*斜体*` 进行简单强调，但**严禁在各维度内部使用任何Markdown标题 (如 `#`, `##`, `###`)、列表标记 (`-`, `*`, `1.`) 或其他复杂Markdown结构。**"""
+**输出格式要求**：
+1. 必须按6个维度顺序输出，以指定emoji开头（⭐🎯🔧🧪💡🔮）
+2. 第1维度必须明确给出评分（如"3.5星"）
+3. 每维度纯文本段落，可用 **加粗** 或 *斜体*，严禁使用标题标记(#)、列表标记(-*/1.)等
+4. 总长500-700字，语言专业严谨，体现顶级会议reviewer标准"""
 
     @staticmethod
     def get_user_prompt(paper: arxiv.Result) -> str:
@@ -165,7 +80,6 @@ class PromptManager:
                 if len(author_names) > 5:
                     authors_str += f" 等{len(author_names)}人"
             except AttributeError as e:
-                logger = logging.getLogger(__name__)
                 logger.warning(f"Abnormal author object structure: {e}")
                 authors_str = "作者信息异常"
         
@@ -189,45 +103,71 @@ class PromptManager:
 
     @staticmethod
     def format_batch_analysis_prompt(papers: list[Dict[str, Any]]) -> str:
-        """格式化深度批量分析的用户提示词"""
+        """
+        格式化深度批量分析的用户提示词。
+        如果提供了全文，则使用全文；否则回退到使用摘要。
+        使用tiktoken进行精确的token截断。
+        """
         paper_texts = []
+        # 为分析内容设定一个安全的最大token数，为其他提示词部分留出余量
+        MAX_CONTENT_TOKENS = 7500 
+        tokenizer = PromptManager._get_tokenizer()
+
         for paper in papers:
+            content_key = "Full Text"
+            content_value = paper.get('full_text')
+            
+            if not content_value:
+                content_key = "Abstract"
+                content_value = paper.get('abstract', 'N/A')
+            
+            # 使用tokenizer进行精确截断
+            if tokenizer:
+                tokens = tokenizer.encode(content_value)
+                if len(tokens) > MAX_CONTENT_TOKENS:
+                    truncated_tokens = tokens[:MAX_CONTENT_TOKENS]
+                    content_value = tokenizer.decode(truncated_tokens, errors='ignore') + "\n... (内容已截断)"
+            else:
+                # 如果tokenizer加载失败，回退到基于字符的截断
+                if len(content_value) > 25000: # 粗略估算
+                    content_value = content_value[:25000] + "\n... (内容已截断)"
+
             paper_texts.append(
 f"""---
 **Paper ID**: {paper['paper_id']}
 **Title**: {paper['title']}
-**Abstract**:
-{paper.get('abstract', 'N/A').replace('{', '{{').replace('}', '}}')}
+**{content_key}**:
+{content_value.replace('{', '{{').replace('}', '}}')}
 ---"""
             )
-        return "Please provide a comprehensive 5-point analysis for each of the following papers, formatted clearly with separators.\n" + "\n".join(paper_texts)
+        return "请对以下每篇论文提供完整的六维度分析，使用分隔符清晰格式化。如果提供了全文，必须基于全文进行分析。\n" + "\n".join(paper_texts)
 
     @staticmethod
     def get_stage1_ranking_system_prompt() -> str:
         """获取第一阶段强制排名系统提示词"""
-        return """You are an expert AI research assistant. Your task is to perform a relative quality ranking on a small batch of academic papers.
-You will be given a list of papers, each with a title and an abstract.
-You MUST follow these rules strictly:
-1.  **Relative Ranking**: Do not judge each paper in isolation. You MUST compare them against each other to determine their relative novelty, significance, and potential impact.
-2.  **Forced Distribution Scoring**: You MUST assign a score to each paper based on its rank within the current batch. The scores must follow this forced distribution:
-    -   **Top 10% (e.g., 1 paper in a batch of 10)**: Assign a score between 4.5 and 5.0. These are groundbreaking papers.
-    -   **Next 20% (e.g., 2 papers in a batch of 10)**: Assign a score between 3.5 and 4.4. These are significant and interesting papers.
-    -   **Middle 40% (e.g., 4 papers in a batch of 10)**: Assign a score between 2.5 and 3.4. These are solid, incremental contributions.
-    -   **Bottom 30% (e.g., 3 papers in a batch of 10)**: Assign a score between 1.0 and 2.4. These are minor, less impactful, or flawed papers.
-3.  **JSON Output**: You MUST return your analysis as a single JSON object. This object should be a list where each element corresponds to one paper and contains the paper's ID, its assigned score, and a brief justification for the score. Do not include any text outside of the JSON object.
+        return """你是AI论文评审专家。任务是对一批论文进行相对质量排名。
 
-Example for a batch of 10 papers:
+**严格规则**：
+1. **相对排名**：必须相互比较，确定相对新颖性、重要性和潜在影响
+2. **强制分布评分**：必须按批次内排名分配分数，遵循以下分布：
+   - **前10%**：4.5-5.0分（突破性工作）
+   - **接下来20%**：3.5-4.4分（重要且有趣）
+   - **中间40%**：2.5-3.4分（扎实的渐进贡献）
+   - **后30%**：1.0-2.4分（次要/影响有限/有缺陷）
+3. **JSON输出**：必须返回JSON列表，每个元素包含paper_id、score和justification。不要包含JSON之外的任何文本。
+
+示例（10篇论文）：
 [
-  {"paper_id": "2401.0001", "score": 4.8, "justification": "Breakthrough approach to a long-standing problem."},
-  {"paper_id": "2401.0005", "score": 4.1, "justification": "Significant improvement over SOTA with strong results."},
-  {"paper_id": "2401.0008", "score": 3.9, "justification": "Interesting new application of an existing method."},
-  {"paper_id": "2401.0002", "score": 3.2, "justification": "Solid incremental work with decent experiments."},
-  {"paper_id": "2401.0004", "score": 3.1, "justification": "An okay contribution, but lacks novelty."},
-  {"paper_id": "2401.0007", "score": 2.8, "justification": "Incremental work, limited validation."},
-  {"paper_id": "2401.0009", "score": 2.5, "justification": "Standard methodology, predictable results."},
-  {"paper_id": "2401.0003", "score": 2.1, "justification": "Minor contribution with several limitations."},
-  {"paper_id": "2401.0006", "score": 1.8, "justification": "Flawed methodology, results are not convincing."},
-  {"paper_id": "2401.0010", "score": 1.5, "justification": "Very limited novelty and weak supporting evidence."}
+  {"paper_id": "2401.0001", "score": 4.8, "justification": "突破性方法解决长期问题"},
+  {"paper_id": "2401.0005", "score": 4.1, "justification": "显著超越SOTA，结果强劲"},
+  {"paper_id": "2401.0008", "score": 3.9, "justification": "现有方法的新颖应用"},
+  {"paper_id": "2401.0002", "score": 3.2, "justification": "扎实的渐进工作，实验良好"},
+  {"paper_id": "2401.0004", "score": 3.1, "justification": "可以接受的贡献，但缺乏新颖性"},
+  {"paper_id": "2401.0007", "score": 2.8, "justification": "渐进工作，验证有限"},
+  {"paper_id": "2401.0009", "score": 2.5, "justification": "标准方法，结果可预见"},
+  {"paper_id": "2401.0003", "score": 2.1, "justification": "次要贡献，局限性较多"},
+  {"paper_id": "2401.0006", "score": 1.8, "justification": "方法有缺陷，结果不可信"},
+  {"paper_id": "2401.0010", "score": 1.5, "justification": "新颖性极其有限，证据薄弱"}
 ]
 """
 
@@ -246,7 +186,7 @@ f"""    {{
         "abstract": {abstract}
     }}"""
             )
-        return f"Please rank the following papers based on the rules provided in the system prompt. Here is the list of papers:\n[\n{',\\n'.join(paper_texts)}\n]"
+        return f"请根据系统提示中的规则对以下论文进行排名。论文列表：\n[\n{',\\n'.join(paper_texts)}\n]"
 
     @staticmethod
     def format_analysis_for_html(analysis_text: str) -> str:

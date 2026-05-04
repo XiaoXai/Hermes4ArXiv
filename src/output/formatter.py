@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Tuple
 import arxiv
 from jinja2 import Environment, FileSystemLoader, Template
 
-from src.utils.logger import logger
+from ..utils.logger import logger
 
 
 class OutputFormatter:
@@ -150,7 +150,9 @@ class OutputFormatter:
             "技术方法": "🔧", 
             "实验验证": "🧪",
             "影响与意义": "💡",
+            "影响意义": "💡",
             "局限与展望": "🔮",
+            "局限展望": "🔮",
             "Core Contribution": "🎯",
             "Technical Methods": "🔧",
             "Experimental Validation": "🧪", 
@@ -158,51 +160,113 @@ class OutputFormatter:
             "Limitations & Future Work": "🔮"
         }
 
-        # 分割段落
-        paragraphs = analysis.split("\n\n")
+        # 首先尝试按行分割（适配新的格式：每个维度一行）
+        lines = analysis.split("\n")
         html_sections = []
 
         current_section = None
         current_content = []
 
-        for para in paragraphs:
-            para = para.strip()
-            if not para:
+        for line in lines:
+            line = line.strip()
+            if not line:
                 continue
 
-            # 检查是否是新的分析维度标题
+            # 检查是否是新的分析维度
             is_dimension_title = False
             dimension_icon = "📝"
+            dimension_title = ""
             
-            # 匹配数字开头的标题 (如 "1. 核心贡献")
-            title_match = re.match(r'^(\d+)\.\s*(.+?)[:：]?\s*$', para)
-            if title_match:
-                dimension_title = title_match.group(2).strip()
+            # 匹配格式1: "🎯 **核心贡献**：内容" 或 "🎯 **核心贡献**: 内容"
+            match1 = re.match(r'^([🎯🔧🧪💡🔮⭐📝])\s*\*\*(.+?)\*\*[:：]\s*(.+)$', line)
+            if match1:
+                emoji_in_text = match1.group(1).strip()
+                dimension_title = match1.group(2).strip()
+                content_text = match1.group(3).strip()
+                
+                # 首先使用文本中的 emoji
+                dimension_icon = emoji_in_text
+                
+                # 如果能在字典中找到对应的图标，使用字典中的图标
+                for dim_name, icon in dimension_icons.items():
+                    if dim_name in dimension_title:
+                        dimension_icon = icon
+                        break
+                
+                is_dimension_title = True
+                
+                # 保存之前的section
+                if current_section and current_content:
+                    html_sections.append(self._create_analysis_section(current_section, current_content))
+                
+                # 创建新section，并直接添加内容
+                current_section = {
+                    "title": dimension_title,
+                    "icon": dimension_icon
+                }
+                current_content = [content_text] if content_text else []
+                continue
+            
+            # 匹配格式2: "⭐ **3.5星**：内容" (评分行)
+            match2 = re.match(r'^[⭐]\s*\*\*(.+?)\*\*[:：]\s*(.+)$', line)
+            if match2:
+                rating_text = match2.group(1).strip()
+                content_text = match2.group(2).strip()
+                
+                # 保存之前的section
+                if current_section and current_content:
+                    html_sections.append(self._create_analysis_section(current_section, current_content))
+                
+                # 创建评分section
+                current_section = {
+                    "title": rating_text,
+                    "icon": "⭐"
+                }
+                current_content = [content_text] if content_text else []
+                continue
+            
+            # 匹配格式3: 数字开头的标题 (如 "1. 核心贡献")
+            match3 = re.match(r'^(\d+)\.\s*(.+?)[:：]?\s*$', line)
+            if match3:
+                dimension_title = match3.group(2).strip()
                 dimension_icon = dimension_icons.get(dimension_title, "📝")
                 is_dimension_title = True
-            else:
-                # 检查是否直接是维度名称
-                for dim_name, icon in dimension_icons.items():
-                    if para.startswith(dim_name):
-                        dimension_icon = icon
-                        is_dimension_title = True
-                        break
-
-            if is_dimension_title:
+                
                 # 保存之前的section
                 if current_section and current_content:
                     html_sections.append(self._create_analysis_section(current_section, current_content))
                 
                 # 开始新的section
                 current_section = {
-                    "title": para,
+                    "title": dimension_title,
+                    "icon": dimension_icon
+                }
+                current_content = []
+                continue
+            
+            # 匹配格式4: 直接以维度名称开头
+            for dim_name, icon in dimension_icons.items():
+                if line.startswith(dim_name):
+                    dimension_icon = icon
+                    is_dimension_title = True
+                    dimension_title = line
+                    break
+            
+            if is_dimension_title and not match1 and not match2:
+                # 保存之前的section
+                if current_section and current_content:
+                    html_sections.append(self._create_analysis_section(current_section, current_content))
+                
+                # 开始新的section
+                current_section = {
+                    "title": dimension_title,
                     "icon": dimension_icon
                 }
                 current_content = []
             else:
                 # 添加到当前section的内容
-                if para:
-                    current_content.append(para)
+                if line and not is_dimension_title:
+                    current_content.append(line)
 
         # 添加最后一个section
         if current_section and current_content:
@@ -210,7 +274,9 @@ class OutputFormatter:
 
         # 如果没有找到结构化的分析，使用简单格式
         if not html_sections:
-            return f'<div class="analysis-section"><div class="analysis-content">{self._format_simple_text(analysis)}</div></div>'
+            # 简单地将整个文本转换为HTML格式，处理换行和基本格式
+            formatted_text = self._format_simple_text(analysis)
+            return f'<div class="analysis-content">{formatted_text}</div>'
 
         return "\n".join(html_sections)
 
@@ -228,18 +294,20 @@ class OutputFormatter:
         title = section_info["title"]
         icon = section_info["icon"]
         
-        # 处理内容
-        content_html = []
-        for content in content_list:
-            formatted_content = self._format_simple_text(content)
-            content_html.append(f"<p>{formatted_content}</p>")
-
-        content_str = "\n".join(content_html)
+        # 处理内容 - 将所有内容合并为一个段落
+        # 因为AI输出的每个维度通常是一个完整的段落
+        if content_list:
+            # 合并所有内容行
+            full_content = " ".join(content_list)
+            formatted_content = self._format_simple_text(full_content)
+            content_str = f"<p>{formatted_content}</p>"
+        else:
+            content_str = ""
 
         return f'''<div class="analysis-section">
     <div class="analysis-title">
-        <span>{icon}</span>
-        {title}
+        <span class="icon-badge">{icon}</span>
+        <strong>{title}</strong>
     </div>
     <div class="analysis-content">
         {content_str}
@@ -256,17 +324,22 @@ class OutputFormatter:
         Returns:
             格式化后的HTML文本
         """
-        # 处理粗体
+        if not text:
+            return ""
+        
+        # 处理粗体 **text**
         text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
         
-        # 处理斜体
-        text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+        # 处理斜体 *text* (但不匹配已经转换过的粗体)
+        text = re.sub(r'(?<!\*)\*([^\*]+?)\*(?!\*)', r'<em>\1</em>', text)
         
-        # 处理代码
-        text = re.sub(r'`(.*?)`', r'<code>\1</code>', text)
+        # 处理代码 `code`
+        text = re.sub(r'`([^`]+?)`', r'<code>\1</code>', text)
         
-        # 处理换行
-        text = text.replace('\n', '<br>')
+        # 不自动转换所有换行，只保留双换行作为段落分隔
+        # 单个换行保留为空格（方便长段落自然流动）
+        text = text.replace('\n\n', '</p><p>')
+        text = text.replace('\n', ' ')
         
         return text
 
@@ -423,6 +496,16 @@ class OutputFormatter:
             logger.info(f"内容已保存到 {file_path}")
         except Exception as e:
             logger.error(f"保存文件失败 {file_path}: {e}")
+
+    def get_email_subject(self) -> str:
+        """
+        生成邮件主题
+
+        Returns:
+            邮件主题字符串
+        """
+        today = datetime.datetime.now().strftime("%Y年%m月%d日")
+        return f"🏛️ Hermes4ArXiv - {today} AI论文分析报告"
 
     def create_summary_stats(
         self, papers_analyses: List[Tuple[arxiv.Result, Dict[str, Any]]]
